@@ -1,4 +1,5 @@
 
+
 #define poll_data_rounding 1000.0
 #define read_data_rounding 1000 // for cases when button noise is too high
 //#define debug                    and buttons start doubleclicking
@@ -25,3 +26,10 @@
 
 #define eepromstartanim_colb eepromstartanim_colr+16 //(blue)
 #define eepromclick_colb eepromclick_colr+16
+
+
+#if defined(ESP32)
+    #define alloc_word_size 32
+#elif defined(CH32V003)
+    #define alloc_word_size 1
+#endif

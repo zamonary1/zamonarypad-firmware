@@ -41,6 +41,38 @@ int click_col_r;
 int click_col_g;
 int click_col_b;
 
+int btn1val;
+int btn2val;
+
+static portMUX_TYPE _spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+// struct{
+//   uint16_t &btn1val;
+//   uint16_t &btn2val;
+//   uint16_t &button1_sensitivity;
+//   uint16_t &sbutton2_sensitivity;
+// } ButtonData_t;
+
+
+void handleSerial( void * pvParameters ){
+  // Save the original priority
+  
+
+  while(1){
+    if (Serial.available() > 0) {
+      // char inputString[48] = Serial.readStringUntil('\n');  // read untill the next string
+      
+      // taskENTER_CRITICAL(&_spinlock);
+
+      char inputString[64];
+      Serial.readStringUntil('\n').toCharArray(inputString, 63);
+      responseSerial(inputString, btn1val, btn2val, button1_sensitivity, button2_sensitivity);
+      
+      // taskEXIT_CRITICAL(&_spinlock);
+    }
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+  }
+}
 
 void press_button_1(){ //using these functions is keeping the load off USB
   if (!button_1_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
@@ -68,10 +100,29 @@ void release_button_2(){ //using these functions is keeping the load off USB
   }
 }
 
-void handle_led(int btn1val, int button1_sensitivity, int btn2val, int button2_sensitivity){ //this function gets called every loop() cycle and controls the behavior of LEDs.
+void handleButtons( void * pvParameters ){
+  (void) pvParameters;
 
-  if (time_leds_updated_last<millis()-10){ //update every 10ms
+  while(1){
+    
+    btn1val = touchRead(btn_1_pin);
+    btn2val = touchRead(btn_2_pin);
 
+    if (btn1val > button1_sensitivity) press_button_1();
+    else if (btn1val < button1_sensitivity - read_data_rounding) release_button_1();
+
+    if (btn2val > button2_sensitivity) press_button_2();
+    else if (btn2val < button2_sensitivity - read_data_rounding) release_button_2();
+
+    vTaskDelay(0.5 / portTICK_PERIOD_MS); //0.5ms delay
+  }
+}
+
+void handle_led( void * pvParameters ){ //this function gets called evxzzery xzxzxxxxxxxxxxxxxxxxxxxxxxxxxxxxzxzxzxzxzloop() cyczzxxzle and controls the behavior of LEDs.
+
+  (void) pvParameters;
+
+  while(1){
     if (btn1val>button1_sensitivity){
       led1_rgb(click_col_r, click_col_g, click_col_b);
     } else if (btn1val<button1_sensitivity-read_data_rounding) {
@@ -83,11 +134,17 @@ void handle_led(int btn1val, int button1_sensitivity, int btn2val, int button2_s
     } else if (btn2val<button2_sensitivity-read_data_rounding) {
       led2_rgb(0, 0, 0);
     }
-  
+
+
+
     led_update();
 
-    time_leds_updated_last=millis();
+
+    vTaskDelay(20 / portTICK_PERIOD_MS);
   }
+  //  time_leds_updated_last=millis();
+  //}xzzzxxxzzzxzxzxzzzxxxxxxxxxxxxxxzzzxxxzzzxxxxxxzzzxzxzxzzzzzzxxzzzz
+  
 }
 
 void firstLaunchInit(){
@@ -160,12 +217,14 @@ void printStartInfo(){
   Serial.print(' ');
   Serial.print(click_col_g);
   Serial.print(' ');
-  Serial.println(click_col_b);
+  Serial.print(click_col_b);
+
+  Serial.print("Max FreeRTOS priority: " + configMAX_PRIORITIES);
 }
 
 void setup() {
   Serial.begin(115200);
-  delay(100);  // give me some time to bring up serial monitor
+  delay(200);  // give me some time to bring up serial monitor
 
   usb_init();
 
@@ -173,7 +232,6 @@ void setup() {
 
   led_init();
 
-  //pinMode(LED_BUILTIN, OUTPUT); board does not contain a built-in led
   EEPROM.begin(100);
 
   getEEPROMvars();
@@ -202,39 +260,40 @@ void setup() {
 
   printStartInfo();
 
-}
+  
+  xTaskCreate(&handleButtons, //Function name
+      "Touch buttons update", //Task display name
+        64 * alloc_word_size, //Stack size, 32 words or 256 bytes
+                        NULL, //Passed parameters
+                           2, //Priority of task
+                       NULL); //task's handle  
 
+
+  xTaskCreate(&handle_led, //Function name
+           "aRGB handler", //Task display name
+     32 * alloc_word_size, //Stack size, 32 words or 128 bytes
+                     NULL, //Passed parameters
+                        2, //Priority of task
+                    NULL); //task's handle  
+
+
+  xTaskCreate(&handleSerial, //Function name
+           "Serial console", //Task display name
+       64 * alloc_word_size, //Stack size, 64 words or 256 bytes
+                       NULL, //Passed parameters
+                          3, //Priority of task
+                      NULL); //task's handle  
+
+
+
+}
+//
 void loop() {
 
-  int btn1val = touchRead(btn_1_pin);
-  int btn2val = touchRead(btn_2_pin);
 
-  if (btn1val > button1_sensitivity) press_button_1();
-  else if (btn1val < button1_sensitivity - read_data_rounding) release_button_1();
+  // handleSerial(NULL);
 
-  if (btn2val > button2_sensitivity) press_button_2();
-  else if (btn2val < button2_sensitivity - read_data_rounding) release_button_2();
-
-  handle_led(btn1val, button1_sensitivity, btn2val, button2_sensitivity);
-
-
-  if (Serial.available() > 0) {
-
-    String inputString = Serial.readStringUntil('\n');  // read untill the next string
-
-    responseSerial(inputString, btn1val, btn2val, button1_sensitivity, button2_sensitivity);
-
-  }
-/*  #ifdef plotter
-    timer_b++;
-    if (timer_b==200){ //data rounding
-      Serial.println(String(1000.0 / (millis() - timer_a) * 200) + "hz rate");
-      timer_a = millis();
-      timer_b = 0;
-    }
-  #endif */
-
-  delayMicroseconds(250);
+  // delay(100);
 }
 
 

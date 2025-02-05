@@ -1,4 +1,8 @@
 #include <Arduino.h>
 
 //void responseSerial(String inputString);
-void responseSerial(String inputString, uint32_t btn1val, uint32_t btn2val, uint32_t button1_sensitivity, uint32_t button2_sensitivity);
+void responseSerial(char inputString[48],
+                    uint16_t btn1val,
+                    uint16_t btn2val,
+                    uint16_t button1_sensitivity,
+                    uint16_t button2_sensitivity);
