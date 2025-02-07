@@ -118,7 +118,7 @@ void handleButtons( void * pvParameters ){
   }
 }
 
-void handle_led( void * pvParameters ){ //this function gets called evxzzery xzxzxxxxxxxxxxxxxxxxxxxxxxxxxxxxzxzxzxzxzloop() cyczzxxzle and controls the behavior of LEDs.
+void handle_led( void * pvParameters ){ //this function gets called every loop() cyczzxxzle and controls the behavior of LEDs.
 
   (void) pvParameters;
 
