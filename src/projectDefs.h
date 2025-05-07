@@ -16,7 +16,6 @@
 //#define plotter //uncomment if you want to know poll rate
                   //note: uncompatible with desktop app
 
-//comment if you want to disable LED support.
 #define aLED
 
 #define eeprombtn1sens 10
