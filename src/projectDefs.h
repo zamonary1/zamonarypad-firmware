@@ -3,9 +3,12 @@
 #define poll_data_rounding 1000.0
 #define read_data_rounding 1000 // for cases when button noise is too high
 //#define debug                    and buttons start doubleclicking
-#define btn_1_pin T3
-#define btn_2_pin T5
+#define btn_1_pin T5
+#define btn_2_pin T3
 #define leds_pin 10
+
+#define BUTTON_1_CH 'z'
+#define BUTTON_2_CH 'x'
 
 //Type of touch signal reading
 #define analogRead

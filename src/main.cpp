@@ -56,18 +56,18 @@ static portMUX_TYPE _spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 void handleSerial( void * pvParameters ){
   // Save the original priority
-  
+
 
   while(1){
     if (Serial.available() > 0) {
       // char inputString[48] = Serial.readStringUntil('\n');  // read untill the next string
-      
+
       // taskENTER_CRITICAL(&_spinlock);
 
       char inputString[64];
       Serial.readStringUntil('\n').toCharArray(inputString, 63);
       responseSerial(inputString, btn1val, btn2val, button1_sensitivity, button2_sensitivity);
-      
+
       // taskEXIT_CRITICAL(&_spinlock);
     }
     vTaskDelay(100 / portTICK_PERIOD_MS);
@@ -76,26 +76,26 @@ void handleSerial( void * pvParameters ){
 
 void press_button_1(){ //using these functions is keeping the load off USB
   if (!button_1_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_press('z');
+  key_press(BUTTON_1_CH);
   button_1_pressed = true;
   }
 }
 void release_button_1(){ //using these functions is keeping the load off USB
   if (button_1_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_release('z');
+  key_release(BUTTON_1_CH);
   button_1_pressed = false;
   }
 }
 
 void press_button_2(){ //using these functions is keeping the load off USB
   if (!button_2_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_press('x');
+  key_press(BUTTON_2_CH);
   button_2_pressed = true;
   }
 }
 void release_button_2(){ //using these functions is keeping the load off USB
   if (button_2_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_release('x');
+  key_release(BUTTON_2_CH);
   button_2_pressed = false;
   }
 }
@@ -104,7 +104,7 @@ void handleButtons( void * pvParameters ){
   (void) pvParameters;
 
   while(1){
-    
+
     btn1val = touchRead(btn_1_pin);
     btn2val = touchRead(btn_2_pin);
 
@@ -144,7 +144,7 @@ void handle_led( void * pvParameters ){ //this function gets called every loop()
   }
   //  time_leds_updated_last=millis();
   //}
-  
+
 }
 
 void firstLaunchInit(){
@@ -176,7 +176,7 @@ void firstLaunchInit(){
   EEPROM.put(eepromclick_colr,     0   ); //click indication color
   EEPROM.put(eepromclick_colg,     20  );
   EEPROM.put(eepromclick_colb,     15  );
-  
+
   EEPROM.put(0, 100);//completed initial setup, skip on next boot
   EEPROM.commit();
   led1_rgb(0, 255, 0);
@@ -260,13 +260,13 @@ void setup() {
 
   printStartInfo();
 
-  
+
   xTaskCreate(&handleButtons, //Function name
       "Touch buttons update", //Task display name
         64 * alloc_word_size, //Stack size, 32 words or 256 bytes
                         NULL, //Passed parameters
                            2, //Priority of task
-                       NULL); //task's handle  
+                       NULL); //task's handle
 
 
   xTaskCreate(&handle_led, //Function name
@@ -274,7 +274,7 @@ void setup() {
      32 * alloc_word_size, //Stack size, 32 words or 128 bytes
                      NULL, //Passed parameters
                         2, //Priority of task
-                    NULL); //task's handle  
+                    NULL); //task's handle
 
 
   xTaskCreate(&handleSerial, //Function name
@@ -282,7 +282,7 @@ void setup() {
        64 * alloc_word_size, //Stack size, 64 words or 256 bytes
                        NULL, //Passed parameters
                           3, //Priority of task
-                      NULL); //task's handle  
+                      NULL); //task's handle
 
 
 
