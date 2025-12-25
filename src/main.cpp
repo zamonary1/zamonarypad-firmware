@@ -1,9 +1,3 @@
-#if ARDUINO_USB_MODE
-#warning This sketch should be used when USB is in OTG mode
-void setup() {}
-void loop() {}
-#else
-
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <ArduinoJson.h>
@@ -25,7 +19,7 @@ unsigned int button1_sensitivity;
 unsigned int button2_sensitivity;
 unsigned long millis_sleep_timer = 0;
 unsigned int i = 1;
-const unsigned short sleep_timeout = 10000;  //10 seconds
+const unsigned int sleep_timeout = 10000;  //10 seconds
 bool touch1detected = false;
 bool touch2detected = false;
 
@@ -74,64 +68,20 @@ void handleSerial( void * pvParameters ){
   }
 }
 
-void press_button_1(){ //using these functions is keeping the load off USB
-  if (!button_1_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_press(BUTTON_1_CH);
-  button_1_pressed = true;
-  }
-}
-void release_button_1(){ //using these functions is keeping the load off USB
-  if (button_1_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_release(BUTTON_1_CH);
-  button_1_pressed = false;
-  }
-}
-
-void press_button_2(){ //using these functions is keeping the load off USB
-  if (!button_2_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_press(BUTTON_2_CH);
-  button_2_pressed = true;
-  }
-}
-void release_button_2(){ //using these functions is keeping the load off USB
-  if (button_2_pressed){    //less identical packets sent = less waiting for mcu = more poll rate
-  key_release(BUTTON_2_CH);
-  button_2_pressed = false;
-  }
-}
-
-void handleButtons( void * pvParameters ){
-  (void) pvParameters;
-
-  while(1){
-
-    btn1val = touchRead(btn_1_pin);
-    btn2val = touchRead(btn_2_pin);
-
-    if (btn1val > button1_sensitivity) press_button_1();
-    else if (btn1val < button1_sensitivity - read_data_rounding) release_button_1();
-
-    if (btn2val > button2_sensitivity) press_button_2();
-    else if (btn2val < button2_sensitivity - read_data_rounding) release_button_2();
-
-    vTaskDelay(0.5 / portTICK_PERIOD_MS); //0.5ms delay
-  }
-}
-
 void handle_led( void * pvParameters ){ //this function gets called every loop() cyczzxxzle and controls the behavior of LEDs.
 
   (void) pvParameters;
 
   while(1){
-    if (btn1val>button1_sensitivity){
+    if (button_1_pressed){
       led1_rgb(click_col_r, click_col_g, click_col_b);
-    } else if (btn1val<button1_sensitivity-read_data_rounding) {
+    } else {
       led1_rgb(0, 0, 0);
     }
 
-    if (btn2val>button2_sensitivity){
+    if (button_2_pressed){
       led2_rgb(click_col_r, click_col_g, click_col_b);
-    } else if (btn2val<button2_sensitivity-read_data_rounding) {
+    } else {
       led2_rgb(0, 0, 0);
     }
 
@@ -142,8 +92,6 @@ void handle_led( void * pvParameters ){ //this function gets called every loop()
 
     vTaskDelay(20 / portTICK_PERIOD_MS);
   }
-  //  time_leds_updated_last=millis();
-  //}
 
 }
 
@@ -224,19 +172,12 @@ void printStartInfo(){
 
 void setup() {
   Serial.begin(115200);
-  delay(200);  // give me some time to bring up serial monitor
 
   usb_init();
-
-  pinMode(leds_pin, OUTPUT);
-
   led_init();
 
   EEPROM.begin(100);
-
   getEEPROMvars();
-
-
 
   for (unsigned char i = 0; i<255; i+=1){
     uint8_t col_r = bootanim_col_r * i / 255;
@@ -260,15 +201,6 @@ void setup() {
 
   printStartInfo();
 
-
-  xTaskCreate(&handleButtons, //Function name
-      "Touch buttons update", //Task display name
-        64 * alloc_word_size, //Stack size, 32 words or 256 bytes
-                        NULL, //Passed parameters
-                           2, //Priority of task
-                       NULL); //task's handle
-
-
   xTaskCreate(&handle_led, //Function name
            "aRGB handler", //Task display name
      32 * alloc_word_size, //Stack size, 32 words or 128 bytes
@@ -284,17 +216,31 @@ void setup() {
                           3, //Priority of task
                       NULL); //task's handle
 
-
-
 }
-//
+
 void loop() {
+  btn1val = touchRead(btn_1_pin);
+  btn2val = touchRead(btn_2_pin);
+
+  if (btn1val > button1_sensitivity && !button_1_pressed) {
+      key_press(button_1_char);
+      button_1_pressed = true;
+  }
+  else if (btn1val < button1_sensitivity - button_hysteresis && button_1_pressed){
+      key_release(button_1_char);
+      button_1_pressed = false;
+  }
 
 
-  // handleSerial(NULL);
+  if (btn2val > button2_sensitivity && !button_2_pressed) {
+      key_press(button_2_char);
+      button_2_pressed = true;
+  }
+  else if (btn2val < button2_sensitivity - button_hysteresis && button_2_pressed){
+      key_release(button_2_char);
+      button_2_pressed = false;
+  }
 
-  // delay(100);
+  delayMicroseconds(500); //0.5ms = 2000hz poll rate
+
 }
-
-
-#endif

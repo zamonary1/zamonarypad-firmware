@@ -7,7 +7,10 @@ const int NUM_LEDS = 2;
 
 CRGB leds[NUM_LEDS];
 
-void led_init() {FastLED.addLeds<WS2812, leds_pin, RGB>(leds, 2);}
+void led_init() {
+    pinMode(leds_pin, OUTPUT);
+    FastLED.addLeds<WS2812, leds_pin, RGB>(leds, 2);
+}
 
 void led1_rgb(uint8_t red_col, uint8_t green_col, uint8_t blue_col){
     leds[1] = CRGB(red_col, green_col, blue_col);
