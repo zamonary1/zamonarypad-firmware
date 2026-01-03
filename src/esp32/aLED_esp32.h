@@ -1,5 +1,3 @@
-
-#include <FastLED.h>
 #include <Arduino.h>
 
 
